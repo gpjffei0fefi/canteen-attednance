@@ -1,0 +1,349 @@
+/*
+  Design direction
+  ----------------
+  Palette pulled from a working canteen, not a SaaS dashboard:
+  chalkboard menu boards, butcher-paper order tickets, the warm cast
+  of kitchen lighting. Typography pairs a sturdy slab-serif (the
+  "chalkboard menu" feel) for headings with a clean grotesque for
+  data, since this is read quickly between tasks, not browsed.
+
+  Tokens:
+    --board:      #2B2420   (chalkboard brown-black, header bg)
+    --paper:      #F7F1E6   (butcher paper, page bg)
+    --ticket:     #FFFDF8   (order ticket white, card bg)
+    --char:       #2B2420   (body text)
+    --ember:      #C1521F   (status / accent — like a stove ember)
+    --sage:       #5C7A5C   (checked-in / present, like fresh herbs)
+    --line:       #E3D8C3   (hairline borders)
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Space+Grotesk:wght@400;500;600&display=swap');
+
+:root {
+  --board: #2B2420;
+  --paper: #F7F1E6;
+  --ticket: #FFFDF8;
+  --char: #2B2420;
+  --ember: #C1521F;
+  --sage: #5C7A5C;
+  --line: #E3D8C3;
+  --muted: #8A7F6D;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--char);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h1, h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  background: var(--board);
+  color: var(--paper);
+  border-bottom: 3px solid var(--ember);
+}
+
+.topbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-mark {
+  font-size: 20px;
+}
+
+.brand-name {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 19px;
+}
+
+.device-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #D8CDBE;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+  display: inline-block;
+}
+
+.status-dot.online { background: var(--sage); box-shadow: 0 0 0 3px rgba(92,122,92,0.25); }
+.status-dot.offline { background: var(--ember); box-shadow: 0 0 0 3px rgba(193,82,31,0.25); }
+
+/* ---------- Layout grid ---------- */
+
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 22px;
+}
+
+.panel {
+  background: var(--ticket);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 22px 24px;
+}
+
+.today-panel { grid-column: 1; grid-row: 1; }
+.feed-panel { grid-column: 2; grid-row: 1 / 3; }
+.enroll-panel { grid-column: 1; grid-row: 2; }
+.roster-panel { grid-column: 1; grid-row: 3; }
+.history-panel { grid-column: 1 / 3; }
+
+.panel-header { margin-bottom: 16px; }
+.panel-header h1 { font-size: 26px; }
+.panel-header h2 { font-size: 19px; }
+.panel-sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- Today table ---------- */
+
+.today-table-wrap { overflow-x: auto; }
+
+.today-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.today-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--line);
+}
+
+.today-table td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.today-table tbody tr {
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.today-table tbody tr:hover { background: var(--paper); }
+
+.employee-name { font-weight: 500; }
+
+.status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-pill.present { background: rgba(92,122,92,0.15); color: var(--sage); }
+.status-pill.done { background: rgba(138,127,109,0.18); color: var(--muted); }
+.status-pill.absent { background: transparent; color: var(--muted); }
+
+.empty-row { color: var(--muted); text-align: center; padding: 24px 0 !important; }
+
+/* ---------- Live feed ---------- */
+
+.feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.feed-list li {
+  padding: 10px 12px;
+  border-left: 3px solid var(--line);
+  font-size: 13.5px;
+  background: var(--paper);
+  border-radius: 2px;
+}
+
+.feed-list li.event-in { border-left-color: var(--sage); }
+.feed-list li.event-out { border-left-color: var(--ember); }
+.feed-list li.event-unknown { border-left-color: var(--muted); }
+
+.feed-time {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.feed-empty { color: var(--muted); text-align: center; border-left: none !important; }
+
+/* ---------- Enroll form ---------- */
+
+.enroll-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+}
+
+.enroll-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.optional { font-style: italic; }
+
+.enroll-form input {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--char);
+}
+
+.enroll-form input:focus {
+  outline: none;
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px rgba(193,82,31,0.12);
+}
+
+.enroll-form button {
+  align-self: flex-start;
+  background: var(--ember);
+  color: var(--ticket);
+  border: none;
+  padding: 10px 18px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.enroll-form button:disabled {
+  background: var(--muted);
+  cursor: not-allowed;
+}
+
+.enroll-form button:focus-visible {
+  outline: 2px solid var(--board);
+  outline-offset: 2px;
+}
+
+.enroll-status {
+  margin: 0;
+  font-size: 13px;
+  min-height: 18px;
+}
+
+.enroll-status.success { color: var(--sage); }
+.enroll-status.error { color: var(--ember); }
+
+/* ---------- Roster ---------- */
+
+.roster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.roster-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.roster-list li:last-child { border-bottom: none; }
+
+.roster-role {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* ---------- History ---------- */
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--ember);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-list li {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+}
+
+.history-list .h-date { color: var(--muted); }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 880px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .today-panel, .feed-panel, .enroll-panel, .roster-panel, .history-panel {
+    grid-column: 1;
+  }
+  .feed-panel { grid-row: auto; }
+  .feed-list { max-height: 320px; }
+}
