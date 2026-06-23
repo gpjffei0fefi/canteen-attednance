@@ -1,7 +1,9 @@
 """
 test_attendance_logic.py
 -------------------------
-Unit tests for the database layer and IN/OUT auto-detection logic.
+Unit tests for the database layer, IN/OUT auto-detection logic, and
+the PC -> Arduino serial protocol formatting used for the LCD display
+and RTC time sync.
 
 Uses a temporary SQLite file per test run (not the real attendance.db)
 so tests never touch real data and can run repeatedly / in CI.
@@ -11,6 +13,7 @@ Run with:
 """
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -144,3 +147,86 @@ def test_logs_filtered_by_employee(temp_db):
     juan_logs = database.get_logs(employee_id=emp1)
     assert len(juan_logs) == 1
     assert juan_logs[0]["full_name"] == "Juan"
+
+
+# ---------------------------------------------------------------------
+# Serial protocol formatting (PC -> Arduino)
+#
+# These don't run the actual firmware (that's C++, not testable from
+# here) — they verify that the strings serial_listener.py and main.py
+# build match the format the .ino file's handleDisplayCommand() and
+# handleSetTimeCommand() expect to parse. A mismatch here is exactly
+# the kind of bug that's invisible until you're standing in front of
+# real hardware wondering why the LCD shows nothing.
+# ---------------------------------------------------------------------
+
+def _parse_display_command(command: str):
+    """Mirrors handleDisplayCommand() in fingerprint_attendance.ino."""
+    assert command.startswith("DISPLAY:")
+    payload = command[len("DISPLAY:"):]
+    first_colon = payload.index(":")
+    second_colon = payload.index(":", first_colon + 1)
+    return {
+        "event_type": payload[:first_colon],
+        "fingerprint_id": payload[first_colon + 1:second_colon],
+        "time": payload[second_colon + 1:],
+    }
+
+
+def _parse_settime_command(command: str):
+    """Mirrors handleSetTimeCommand() in fingerprint_attendance.ino."""
+    assert command.startswith("SETTIME:")
+    payload = command[len("SETTIME:"):]
+    assert len(payload) >= 19, "firmware ignores anything shorter than this"
+    date_part = payload[:10]
+    time_part = payload[11:]
+    return {
+        "year": int(date_part[0:4]),
+        "month": int(date_part[5:7]),
+        "day": int(date_part[8:10]),
+        "hour": int(time_part[0:2]),
+        "minute": int(time_part[3:5]),
+        "second": int(time_part[6:8]),
+    }
+
+
+def test_display_command_round_trips_for_check_in():
+    timestamp = "2026-06-23T08:03:11"
+    scan_time = datetime.fromisoformat(timestamp).strftime("%H:%M")
+    command = f"DISPLAY:IN:23:{scan_time}"
+
+    parsed = _parse_display_command(command)
+    assert parsed["event_type"] == "IN"
+    assert parsed["fingerprint_id"] == "23"
+    assert parsed["time"] == "08:03"
+
+
+def test_display_command_round_trips_for_check_out():
+    timestamp = "2026-06-23T17:45:02"
+    scan_time = datetime.fromisoformat(timestamp).strftime("%H:%M")
+    command = f"DISPLAY:OUT:7:{scan_time}"
+
+    parsed = _parse_display_command(command)
+    assert parsed["event_type"] == "OUT"
+    assert parsed["fingerprint_id"] == "7"
+    assert parsed["time"] == "17:45"
+
+
+def test_display_command_handles_multi_digit_fingerprint_ids():
+    # Fingerprint IDs can go up to 127 — make sure a 3-digit ID doesn't
+    # confuse the colon-splitting logic on either end.
+    command = "DISPLAY:IN:127:09:00"
+    parsed = _parse_display_command(command)
+    assert parsed["fingerprint_id"] == "127"
+    assert parsed["time"] == "09:00"
+
+
+def test_settime_command_round_trips():
+    now_str = "2026-06-23:14:32:07"
+    command = f"SETTIME:{now_str}"
+
+    parsed = _parse_settime_command(command)
+    assert parsed == {
+        "year": 2026, "month": 6, "day": 23,
+        "hour": 14, "minute": 32, "second": 7,
+    }

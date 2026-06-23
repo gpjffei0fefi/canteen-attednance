@@ -30,9 +30,9 @@ would be overkill.
 ┌─────────────────┐      USB Serial       ┌──────────────────┐
 │   Fingerprint    │ ───────────────────▶  │   Python/FastAPI │
 │   Sensor +       │   "MATCH:<id>"        │   Backend         │
-│   Arduino        │ ◀───────────────────  │   (SQLite)        │
-└─────────────────┘   "ENROLL:<id>" etc.   └──────────────────┘
-                                                     │
+│   Arduino +      │ ◀───────────────────  │   (SQLite)        │
+│   LCD + RTC      │   "DISPLAY:..." etc.  └──────────────────┘
+└─────────────────┘                                 │
                                                      ▼
                                             ┌──────────────────┐
                                             │  Local Web        │
@@ -49,6 +49,16 @@ would be overkill.
   thread, looks up which employee owns that fingerprint ID, and
   decides IN vs. OUT based on their last logged event *today* — first
   scan of the day is always IN, and it alternates from there.
+- Once the backend decides IN vs. OUT, it sends that result straight
+  back to the Arduino, which shows it on a 16x2 LCD for a few seconds
+  (fingerprint ID, IN/OUT, time) before reverting to a live clock. The
+  Arduino never makes this decision itself — it only ever displays
+  what the backend already logged, so the screen can't drift out of
+  sync with the actual attendance record.
+- A DS1302 RTC module keeps real time on the Arduino side, with its
+  own backup battery so the clock survives power loss. The backend
+  re-syncs it to the PC's system clock on every startup, so it never
+  needs to be set by hand.
 - Everything is stored in a single SQLite file. No database server to
   configure, no network ports to open, no internet connection needed.
 
@@ -58,6 +68,11 @@ would be overkill.
   leave the sensor hardware.
 - 🔁 **Automatic IN/OUT detection** — no mode switches or separate
   buttons for employees to think about.
+- 🖥️ **On-device feedback** — a 16x2 LCD shows a live clock and the
+  result of each scan, so employees get instant confirmation without
+  needing to look at a screen elsewhere.
+- 🕒 **Self-correcting clock** — the Arduino's RTC is automatically
+  synced to the PC's time on every app startup.
 - 📋 **Admin dashboard** — today's attendance at a glance, live scan
   feed, per-employee history, and self-service enrollment flow.
 - 🔌 **Resilient to USB hiccups** — the serial connection
@@ -140,6 +155,11 @@ freshly-cloned CI runner (and often, a freshly-cloned laptop).
   pair works)
 - Optical fingerprint sensor module (Adafruit Fingerprint Sensor
   protocol family — R305/R307/FPM10A and compatible clones)
+- 16x2 character LCD with an I2C backpack — shows a live clock when
+  idle, and the result of the most recent scan (fingerprint ID,
+  IN/OUT, time) for a few seconds after each scan
+- DS1302 RTC module — keeps real time across power cycles; the Python
+  backend automatically syncs it to the PC's clock on every startup
 
 ## Possible extensions
 

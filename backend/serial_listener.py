@@ -88,6 +88,13 @@ def _handle_line(line: str):
         event_type = determine_event_type(employee["id"])
         log_entry = database.log_attendance(employee["id"], event_type)
 
+        # Tell the Arduino what to show on the LCD. We send the
+        # fingerprint_id (not the employee's database id) since
+        # that's the only identifier the Arduino itself ever knows —
+        # it has no concept of employee names or internal DB ids.
+        scan_time = datetime.fromisoformat(log_entry["timestamp"]).strftime("%H:%M")
+        send_command(f"DISPLAY:{event_type}:{fingerprint_id}:{scan_time}")
+
         recent_events.put({
             "type": "ATTENDANCE_LOGGED",
             "employee_id": employee["id"],

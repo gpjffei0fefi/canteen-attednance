@@ -55,6 +55,21 @@ async def lifespan(app: FastAPI):
     try:
         port = serial_listener.start()
         print(f"[startup] Connected to Arduino on {port}")
+
+        # Give the Arduino a moment to finish its own setup() (sensor
+        # init, LCD init) before we start writing to it — otherwise
+        # the SETTIME command can arrive before the board is ready to
+        # read it and gets silently dropped.
+        await asyncio.sleep(2)
+
+        now = time.strftime("%Y-%m-%d:%H:%M:%S")
+        synced = serial_listener.send_command(f"SETTIME:{now}")
+        if synced:
+            print(f"[startup] Synced Arduino RTC to PC time ({now})")
+        else:
+            print("[startup] WARNING: Could not sync RTC — Arduino connection "
+                  "not ready yet. The clock on the LCD may be stale until the "
+                  "next manual sync.")
     except RuntimeError as e:
         print(f"[startup] WARNING: {e}")
         print("[startup] App will run, but fingerprint scanning is unavailable "

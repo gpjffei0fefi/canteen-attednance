@@ -13,17 +13,25 @@ your Arduino, then connect the Arduino to the PC via USB.
 
 1. Install the [Arduino IDE](https://www.arduino.cc/en/software) if
    you don't already have it.
-2. Install the **Adafruit Fingerprint Sensor Library**:
-   - In the Arduino IDE, go to **Sketch → Include Library → Manage
-     Libraries…**
-   - Search for "Adafruit Fingerprint Sensor Library" and install it.
+2. Install three libraries via **Sketch → Include Library → Manage
+   Libraries…**, searching for and installing each of these:
+   - **Adafruit Fingerprint Sensor Library**
+   - **LiquidCrystal_I2C** (by Frank de Brabander — there are a couple
+     of similarly-named forks; this one is the most common and matches
+     the API the firmware expects)
+   - **Rtc by Makuna** (provides the `ThreeWire` and `RtcDS1302`
+     classes used for the DS1302 module)
 3. Open `arduino/fingerprint_attendance/fingerprint_attendance.ino`
    in the Arduino IDE.
 4. Select your board and port under **Tools**, then click **Upload**.
 5. Open **Tools → Serial Monitor**, set the baud rate to 9600. You
-   should see `READY` printed once the sensor initializes correctly.
-   If you see `ENROLL_FAIL:SENSOR_NOT_FOUND` instead, recheck your
-   wiring (see WIRING.md's troubleshooting section).
+   should see `READY` printed once the fingerprint sensor initializes
+   correctly. The LCD should show a brief "Starting..." message, then
+   settle into showing the date and a "RTC not set!" message if the
+   DS1302 hasn't been given a time yet — this is expected and corrects
+   itself automatically once you start the Python backend (step 4).
+   If the sensor instead prints `ENROLL_FAIL:SENSOR_NOT_FOUND`, recheck
+   your wiring (see WIRING.md's troubleshooting section).
 6. **Close the Serial Monitor** before moving to the next step — only
    one program can use the serial port at a time, and the Python
    backend needs it next.
@@ -56,8 +64,14 @@ You should see something like:
 
 ```
 [startup] Connected to Arduino on /dev/ttyUSB0
+[startup] Synced Arduino RTC to PC time (2026-06-23:14:32:07)
 INFO:     Uvicorn running on http://127.0.0.1:8000
 ```
+
+That second line means the backend just set the DS1302's clock to
+match your PC's current time — this happens automatically every time
+the app starts, so the LCD's clock stays accurate without you ever
+needing to set it by hand.
 
 If instead you see a warning that no Arduino was found, the app will
 still run (you can browse the dashboard), but fingerprint scanning
